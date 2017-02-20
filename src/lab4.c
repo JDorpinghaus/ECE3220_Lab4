@@ -18,19 +18,28 @@ void printUsage(void);
 
 int main(int argc, char* argv[]) {
 	int* array;
-	char* newFilename;
-	int i, j, stringLength;
+	int i, stringLength;
+	int foundN = 0;
 	float offset, scale;
+	for(i=0; i<argc; i++){
+		if((argv[i][0] == '-')&&(argv[i][1] == 'n')){
+			foundN = 1;
+			if(atoi(argv[i+1]) <= 11 && atoi(argv[i+1]) >= 1){
+				array = fileToArray(atoi(argv[i+1]));
+			} else {
+				printUsage();
+				exit(0);
+			}
+		}
+	}
+	if(foundN != 1){
+		printUsage();
+		exit(0);
+	}
 	for(i=0; i<argc; i++){
 		if(argv[i][0] == '-'){
 			switch(argv[i][1]){
 			case 'n':
-				if(atoi(argv[i+1]) <= 11 && atoi(argv[i+1]) >= 1){
-					array = fileToArray(atoi(argv[i+1]));
-				} else {
-					printUsage();
-					exit(0);
-				}
 				break;
 			case 'o':
 				if (sscanf(argv[i+1], "%f", &offset) == 0){ //check that a valid float value was input
