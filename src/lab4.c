@@ -13,14 +13,19 @@
 #include <math.h>
 #include <string.h>
 
-int* fileToArray(int num);
+double* fileToArray(int num);
 void printUsage(void);
+double* offset(double* array, double offsetValue);
+void saveFile(char* filename, double* numArray);
+
+int arrayLength;
+int numMax;
 
 int main(int argc, char* argv[]) {
-	int* array;
+	double* array;
 	int i, stringLength;
 	int foundN = 0;
-	float offset, scale;
+	double offset, scale;
 	for(i=0; i<argc; i++){
 		if((argv[i][0] == '-')&&(argv[i][1] == 'n')){
 			foundN = 1;
@@ -30,6 +35,7 @@ int main(int argc, char* argv[]) {
 				printUsage();
 				exit(0);
 			}
+			break;
 		}
 	}
 	if(foundN != 1){
@@ -42,13 +48,17 @@ int main(int argc, char* argv[]) {
 			case 'n':
 				break;
 			case 'o':
-				if (sscanf(argv[i+1], "%f", &offset) == 0){ //check that a valid float value was input
+				if (sscanf(argv[i+1], "%lf", &offset) == 0){ //check that a valid float value was input
 					printUsage();
 					exit(0);
 				}
+				double * offsetArray;
+				offsetArray = offset(array, offset);
+
+				free(offsetArray);
 				break;
 			case 's':
-				if (sscanf(argv[i+1], "%f", &scale) == 0){ //check that a valid float value was input
+				if (sscanf(argv[i+1], "%lf", &scale) == 0){ //check that a valid float value was input
 					printUsage();
 					exit(0);
 				}
@@ -62,6 +72,8 @@ int main(int argc, char* argv[]) {
 				}
 				break;
 			case 'h':
+				printUsage();
+				exit(0);
 				break;
 			case 'S':
 				break;
@@ -81,9 +93,8 @@ int main(int argc, char* argv[]) {
 	return EXIT_SUCCESS;
 }
 
-int* fileToArray(int num){
-	int* dataArray;
-	int numItems, numMax;
+double* fileToArray(int num){
+	double* dataArray;
 	int x=0;
 	FILE *fp;
 	char snum[3];
@@ -92,9 +103,9 @@ int* fileToArray(int num){
 	strcat(filename, snum);
 	strcat(filename, ".txt");
 	fp=fopen(filename, "r");
-	fscanf(fp, "%d %d\n", &numItems, &numMax); //read in number of values and maximum value
-	dataArray = calloc(numItems, sizeof(int)); //allocate memory for number of integers
-	while(fscanf(fp, "%d", &dataArray[x++]) != EOF){} //scan values into integer array
+	fscanf(fp, "%d %d\n", &arrayLength, &numMax); //read in number of values and maximum value
+	dataArray = calloc(arrayLength, sizeof(int)); //allocate memory for number of integers
+	while(fscanf(fp, "%lf", &dataArray[x++]) != EOF){} //scan values into integer array
 	fclose(fp);
 	return dataArray;
 }
@@ -109,4 +120,17 @@ void printUsage(){
 	printf("-S\t\t\tDisplay data statistics\n");
 	printf("-C\t\t\tCenter the data\n");
 	printf("-N\t\t\tNormalize the data\n");
+}
+
+double* offset(double* array, double offsetValue){
+	int i;
+	double* newArray = calloc(arrayLength, sizeof(double));
+	for(i=0;i<arrayLength;i++){
+		newArray[i] = array[i] + offsetValue;
+	}
+	return newArray;
+}
+
+void saveFile(char* filename, double* numArray){
+
 }
