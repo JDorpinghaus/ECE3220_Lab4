@@ -16,21 +16,26 @@
 double* fileToArray(int num);
 void printUsage(void);
 double* offset(double* array, double offsetValue);
-void saveFile(char* filename, double* numArray);
+double* scale(double* array, double scaleValue);
+void saveFloatFile(char* filename, double* numArray, double factor);
+void saveIntFile(char* filename, double* numArray, double factor);
+double maxValue(double* numArray);
+double meanValue(double* numArray);
 
-int arrayLength;
-int numMax;
+int arrayLength, numMax;
 
 int main(int argc, char* argv[]) {
 	double* array;
-	int i, stringLength;
+	int i, stringLength, fileNumber;
 	int foundN = 0;
-	double offset, scale;
+	double offsetValue, scaleValue;
+	char arg;
 	for(i=0; i<argc; i++){
 		if((argv[i][0] == '-')&&(argv[i][1] == 'n')){
 			foundN = 1;
 			if(atoi(argv[i+1]) <= 11 && atoi(argv[i+1]) >= 1){
-				array = fileToArray(atoi(argv[i+1]));
+				fileNumber = atoi(argv[i+1]);
+				array = fileToArray(fileNumber);
 			} else {
 				printUsage();
 				exit(0);
@@ -44,49 +49,68 @@ int main(int argc, char* argv[]) {
 	}
 	for(i=0; i<argc; i++){
 		if(argv[i][0] == '-'){
-			switch(argv[i][1]){
-			case 'n':
-				break;
-			case 'o':
-				if (sscanf(argv[i+1], "%lf", &offset) == 0){ //check that a valid float value was input
-					printUsage();
-					exit(0);
+			arg = argv[i][1];
+			switch(arg){
+				case 'n':
+					break;
+				case 'o':{
+					if (sscanf(argv[i+1], "%lf", &offsetValue) == 0){ //check that a valid float value was input
+						printUsage();
+						exit(0);
+					}
+					double * offsetArray;
+					char offsetFilename[20];
+					sprintf(offsetFilename, "Offset_data_%02d.txt", fileNumber);
+					offsetArray = offset(array, offsetValue);
+					saveFloatFile(offsetFilename, offsetArray, offsetValue);
+					free(offsetArray);
+					break;
 				}
-				double * offsetArray;
-				offsetArray = offset(array, offset);
+				case 's':{
+					if (sscanf(argv[i+1], "%lf", &scaleValue) == 0){ //check that a valid float value was input
+						printUsage();
+						exit(0);
+					}
+					double * scaleArray;
+					char scaleFilename[20];
+					sprintf(scaleFilename, "Scaled_data_%02d.txt", fileNumber);
+					scaleArray = scale(array, scaleValue);
+					saveFloatFile(scaleFilename, scaleArray, scaleValue);
+					free(scaleArray);
+					break;
+				}
+				case 'r': {
+					stringLength = strlen(argv[i+1]);
+					if((argv[i+1][stringLength-1]!='t')||(argv[i+1][stringLength-2]!='x')||(argv[i+1][stringLength-3]!='t')||(argv[i+1][stringLength-4]!='.')){ //Check that a valid .txt filename was entered
+						printUsage();
+						exit(0);
+					}
+					saveIntFile(argv[i+1], array, numMax);
+					break;
+				}
 
-				free(offsetArray);
-				break;
-			case 's':
-				if (sscanf(argv[i+1], "%lf", &scale) == 0){ //check that a valid float value was input
+				case 'h':
 					printUsage();
 					exit(0);
+					break;
+				case 'S':{
+					FILE* sfp;
+					char statisticsFilename[25];
+					sprintf(statisticsFilename, "Statistics_data_%02d.txt", fileNumber);
+					sfp = fopen(statisticsFilename, "w+");
+					fprintf(sfp, "%lf %lf", meanValue(array), maxValue(array));
+					fclose(sfp);
 				}
-				break;
-			case 'r':
-				stringLength = strlen(argv[i+1]);
-				printf("\n\nlen: %d\n\n", stringLength);
-				if((argv[i+1][stringLength-1]!='t')||(argv[i+1][stringLength-2]!='x')||(argv[i+1][stringLength-3]!='t')||(argv[i+1][stringLength-4]!='.')){ //Check that a valid .txt filename was entered
+					break;
+				case 'C':
+					break;
+				case 'N':
+					break;
+				default:
 					printUsage();
 					exit(0);
-				}
-				break;
-			case 'h':
-				printUsage();
-				exit(0);
-				break;
-			case 'S':
-				break;
-			case 'C':
-				break;
-			case 'N':
-				break;
-			default:
-				printUsage();
-				exit(0);
-				break;
+					break;
 			}
-
 		}
 	}
 	free(array);
@@ -104,7 +128,7 @@ double* fileToArray(int num){
 	strcat(filename, ".txt");
 	fp=fopen(filename, "r");
 	fscanf(fp, "%d %d\n", &arrayLength, &numMax); //read in number of values and maximum value
-	dataArray = calloc(arrayLength, sizeof(int)); //allocate memory for number of integers
+	dataArray = calloc(arrayLength, sizeof(double)); //allocate memory for number of integers
 	while(fscanf(fp, "%lf", &dataArray[x++]) != EOF){} //scan values into integer array
 	fclose(fp);
 	return dataArray;
@@ -131,6 +155,55 @@ double* offset(double* array, double offsetValue){
 	return newArray;
 }
 
-void saveFile(char* filename, double* numArray){
+double* scale(double* array, double scaleValue){
+	int i;
+	double* newArray = calloc(arrayLength, sizeof(double));
+	for(i=0;i<arrayLength;i++){
+		newArray[i] = array[i] * scaleValue;
+	}
+	return newArray;
+}
 
+void saveFloatFile(char* newFilename, double* numArray, double factor){
+	FILE* fp;
+	int i;
+	fp = fopen(newFilename, "w+");
+	fprintf(fp, "%d %.4lf\n", arrayLength, factor);
+	for(i=0;i<arrayLength;i++){
+		fprintf(fp, "%.4lf\n", numArray[i]);
+	}
+	fclose(fp);
+}
+
+void saveIntFile(char* newFilename, double* numArray, double factor){
+	FILE* fp;
+	int i;
+	fp = fopen(newFilename, "w+");
+	fprintf(fp, "%d %d\n", arrayLength, (int)factor);
+	for(i=0;i<arrayLength;i++){
+		fprintf(fp, "%d\n", (int)numArray[i]);
+	}
+	fclose(fp);
+}
+
+double maxValue(double* numArray){
+	int i;
+	double max;
+	max = numArray[0];
+	for(i=1;i<arrayLength;i++){
+		if (numArray[i] > max){
+			max = numArray[i];
+		}
+	}
+	return max;
+}
+
+double meanValue(double* numArray){
+	int i;
+	double mean;
+	mean = numArray[0];
+	for(i=1;i<arrayLength;i++){
+		mean += numArray[i];
+	}
+	return (mean/(double)arrayLength);
 }
