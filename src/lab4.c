@@ -98,13 +98,30 @@ int main(int argc, char* argv[]) {
 					char statisticsFilename[25];
 					sprintf(statisticsFilename, "Statistics_data_%02d.txt", fileNumber);
 					sfp = fopen(statisticsFilename, "w+");
-					fprintf(sfp, "%lf %lf", meanValue(array), maxValue(array));
+					fprintf(sfp, "%.4lf %.4lf", meanValue(array), maxValue(array));
 					fclose(sfp);
 				}
 					break;
-				case 'C':
+				case 'C':{
+					double* centeredArray;
+					char centeredFilename[25];
+					double mean = meanValue(array);
+					sprintf(centeredFilename, "Centered_data_%02d.txt", fileNumber);
+					centeredArray = calloc(arrayLength, sizeof(double));
+					centeredArray = offset(array, -1*mean);
+					saveFloatFile(centeredFilename, centeredArray, (-1*mean));
+					free(centeredArray);
+				}
 					break;
-				case 'N':
+				case 'N':{
+					double* normalizedArray;
+					char normalizedFilename[25];
+					sprintf(normalizedFilename, "Normalized_data_%02d.txt", fileNumber);
+					normalizedArray = calloc(arrayLength, sizeof(double));
+					normalizedArray = scale(array, (double)1/numMax);
+					saveFloatFile(normalizedFilename, normalizedArray, (double)1/numMax);
+					free(normalizedArray);
+				}
 					break;
 				default:
 					printUsage();
